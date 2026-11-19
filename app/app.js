@@ -1,251 +1,299 @@
-// GTA VI trophy guide, version 3: an offline checklist that keeps your
-// progress, a six-stage roadmap to the platinum that covers all 55 trophies,
-// and a warning for the one trophy that can be missed. Every trophy row can
-// open its guide and its cited sources right inside the list, and a detail
-// panel shows the same for one trophy at a time. All trophy data comes from
-// data/trophies.json, fetched from this same folder; nothing else is loaded.
+// GTA VI Trophy Case File — tracker logic.
+// Vanilla JS, no libraries. Loads data/trophies.json from this app's own
+// files, keeps earned trophies in localStorage, and never talks to the
+// network: the only links out are the source links a reader chooses to open.
 
-const SAVE_KEY = 'gta6-trophies-v3';
-const DATA_URL = 'data/trophies.json';
+(function () {
+  'use strict';
 
-const listEl = document.getElementById('trophyList');
-const countEl = document.getElementById('countLine');
-const searchEl = document.getElementById('searchBox');
-const gradeEl = document.getElementById('gradePick');
-const kindEl = document.getElementById('kindPick');
-const stateEl = document.getElementById('statePick');
-const missableEl = document.getElementById('missablePick');
-const spoilerEl = document.getElementById('spoilerPick');
-const panelEl = document.getElementById('detailPanel');
-const panelBody = document.getElementById('detailBody');
+  var DATA_URL = 'data/trophies.json';
+  var STORE_KEY = 'gta6-casefile-earned-v1';
+  var SPOILER_KEY = 'gta6-casefile-spoilers-v1';
 
-let trophies = [];
-let earned = new Set(JSON.parse(localStorage.getItem(SAVE_KEY) ?? '[]'));
-let openGuides = new Set();
-let openDetail = null;
+  var SOURCE_LINKS = {
+    'PSNProfiles': 'https://www.planetgta6.com/en/gta-6-trophies/',
+    'Exophase': 'https://www.planetgta6.com/en/gta-6-trophies/',
+    'KeenGamer': 'https://www.keengamer.com/articles/guides/gta-6-trophy-guide-platinum-roadmap-all-55-trophies/',
+    'PowerPyx': 'https://www.powerpyx.com/',
+    'GTABase': 'https://www.gtabase.com/'
+  };
 
-// Six stages, in story order, naming every one of the 55 trophies:
-// 12 story, 7 side characters, 14 collectibles and exploration,
-// 11 activities, 9 robberies and money, and the last 2 for 100% and platinum.
-const ROADMAP = [
-  {
-    title: 'Stage 1 — Play the story first (12 trophies)',
-    body: 'Chapters 1 to 4 and then the final mission. This stage alone earns 12 trophies: the four chapter trophies, the gold for the final mission, and the named story missions — Gone Fishing, Breakfast Run, The Cartel Heist, Child\u2019s Play, Headliners, VCIA Takedown and Operation Savage Glory. Do not rush past Chapter 1: the first meditation spot for Positive Mental Attitude appears there, and it is the only trophy in the game that can be missed.',
-    names: ['Just Like Paradise', 'Paradise Lost', 'T**s Ass Drug Money', 'Vice City, Baby!', 'Top Of The World, Ma', 'You Gotta Know When to Get Off', 'Trust', 'Break the Bank', 'Family Matters', 'DWNFALL', 'Hi-Jacked', 'Snow Storm'],
-  },
-  {
-    title: 'Stage 2 — Side characters and strangers (7 trophies)',
-    body: 'Play the mission strands for Andy, Kenton, Billy, Randy and Tyrone through to each one\u2019s final mission, hunt the unique animal for Bret, and finish 8 stranger mission strands across Leonida for the silver Strangers & Freaks. The five named side-character strands count toward those eight. Strands open up as you explore, so sweep each region as the story reaches it.',
-    names: ['Road to Rehabilitation', 'This Was No Boat Accident', 'The Lone Rider', 'Supply & Demand', 'Spin On This!', 'Fair Game', 'Strangers & Freaks'],
-  },
-  {
-    title: 'Stage 3 — Collectibles, exploration and the map (14 trophies)',
-    body: 'Complete 3 card sets (the 100% checklist asks for 15 of the 18 sets), WAiNK It at 100 locations, meditate at all 18 spots (15 count for 100%, all 18 for the trophy), explore all 52 areas of Leonida, discover 100 vehicles (100% asks for 200 of the 277 base models), register 10 vehicles with Scooter Bros, and chase the hidden exploration trophies: an unscheduled departure from VCIA, a Rhino tank in combat, a cocktail on Ocean Beach, smashing out of a vehicle showroom, maxing Strength for both Jason and Lucia, reaching 500 on your Criminal Profile, and the two strange ones nobody has pinned down yet — Bad Luck, I Guess and The Truth Is Out There. Meditate as you pass each spot; the first one can be missed.',
-    names: ['Don\u2019t Touch My Deck', 'You WAiNKer!', 'Positive Mental Attitude', 'The Goodtime State', 'Whip It Good', 'On the Spot', 'Catch Me If You Can', 'Challenging Tank', 'In The Beginning…', 'Capital Offense', 'Personal Best', 'Actions Speak Louder', 'Bad Luck, I Guess', 'The Truth Is Out There'],
-  },
-  {
-    title: 'Stage 4 — Activities and challenges (11 trophies)',
-    body: 'Gold all 42 Shooting Range challenges, win a Top Fun Drone Race at all 14 locations (plus the 42 drone time trials for 100%), win 20 different races (100% asks for 30 of the 40), pull off 250 stunts (100% asks for 300 of the 397), finish 50 challenges (100% asks for 70 of the 80), try all 9 activity types once, finish an arcade game, take the three valuables from the Kolt & Associates bowling alley, beat Cal at fishing, take down 5 enemies in one use of Combat Focus, and bowl someone over with a melee drive-by.',
-    names: ['The Shootist', 'Top Fun', 'Earn Cash, Not Kudos', 'Cunning Stunts', 'One Last Thing', 'Master of None', 'Stick Fiddler', 'Let\u2019s Go Bowling', 'Baited My Tackle', 'Gunslinger', 'Ten Pin'],
-  },
-  {
-    title: 'Stage 5 — Robberies, partner and money (9 trophies)',
-    body: 'Rob 5 bank vaults and escape — the large vaults open through the optional Chapter 4 mission That\u2019s Where The Money Is, and all 8 vaults count toward 100%. Also rob an armored truck, rob a jewelry store without being detected, rob one illegal operation for each of the 9 gangs (39 in total for 100%), rob 3 shops back-to-back with your partner, and lose a 4-star wanted level with your partner. For money: launder $250,000 of Marked Bills, spend $100,000 across all shops, and buy all 8 garage properties.',
-    names: ['Maximum Withdrawal', 'A Classic Blitz Play', 'Sneakthief', 'Pest Control', 'Retail Therapy', 'Hot Together', 'Dime on the Dollar', 'Treat Yo Self', 'Little Boxes'],
-  },
-  {
-    title: 'Stage 6 — Cleanup and the platinum (2 trophies)',
-    body: 'Open the in-game Progress menu and check the 100% Completion checklist to see what is left, then finish it for the gold A Long Road. The platinum, Vice Got a Price!, pops the moment the other 54 trophies are yours. Expect around 200 hours from the first mission to the platinum.',
-    names: ['A Long Road', 'Vice Got a Price!'],
-  },
-];
+  var STAGES = [
+    { n: 1, title: 'Stage 1 — Landfall, Chapters 1 & 2', note: 'Play the opening chapters and start the long counts now. Meditate at the balcony spot at Jason\u2019s house after Down to Earth, and at every spot after it — the one missable trophy is decided here.' },
+    { n: 2, title: 'Stage 2 — Vice City opens, Chapters 3 & 4', note: 'Finish the story chapters, work the big heist missions, and take your partner along for the two partner trophies.' },
+    { n: 3, title: 'Stage 3 — Strangers of Leonida', note: 'Answer every stranger icon on the map. The five named side characters plus three more strands finish Strangers & Freaks.' },
+    { n: 4, title: 'Stage 4 — Robberies and the open road', note: 'Robberies in all their forms — vaults, trucks, shops, jewelry and gang operations — plus the wild exploration trophies.' },
+    { n: 5, title: 'Stage 5 — The long grind', note: 'Activities and collectibles: stunts, the shooting range, races, challenges, cards, WAiNK It spots and the money trophies. A few at a time, between other jobs.' },
+    { n: 6, title: 'Stage 6 — Endgame and the platinum', note: 'Finish the final mission, sweep the map clean, buy the last garages, and the 100% gold and the platinum pop together.' }
+  ];
 
-function el(tag, cls, text) {
-  const node = document.createElement(tag);
-  if (cls) node.className = cls;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
+  var trophies = [];
+  var earned = loadEarned();
+  var spoilersHidden = loadSpoilers();
 
-function storeProgress() {
-  localStorage.setItem(SAVE_KEY, JSON.stringify([...earned]));
-}
-
-function trophyIsHidden(t) {
-  return spoilerEl.checked && t.spoiler && !earned.has(t.name);
-}
-
-function sourceLine(sources) {
-  return sources.map((s) => `${s.name} — ${s.url}`).join(' · ');
-}
-
-function gradeChip(grade) {
-  return el('span', `chip chip-${grade}`, grade);
-}
-
-function buildCard(t) {
-  const card = el('article', 'trophy-card');
-  if (earned.has(t.name)) card.classList.add('is-earned');
-  if (t.missable) card.classList.add('is-missable');
-
-  const tick = el('input', 'trophy-tick');
-  tick.type = 'checkbox';
-  tick.checked = earned.has(t.name);
-  tick.setAttribute('aria-label', `Mark ${t.name} as earned`);
-  tick.addEventListener('change', () => {
-    if (tick.checked) earned.add(t.name);
-    else earned.delete(t.name);
-    storeProgress();
-    paintList();
-    paintProgress();
-    if (openDetail === t.name) showDetail(t);
+  var els = {};
+  ['searchBox', 'gradeFilter', 'categoryFilter', 'statusFilter', 'missableOnly',
+   'spoilerToggle', 'exportBtn', 'importBtn', 'importFile', 'resetBtn', 'saveNote',
+   'viewChecklist', 'viewRoadmap', 'checklistView', 'roadmapView', 'trophyList',
+   'roadmapList', 'listTitle', 'listCount', 'progressText', 'progressPct',
+   'progressFill', 'drawer', 'drawerBody', 'drawerClose'].forEach(function (id) {
+    els[id] = document.getElementById(id);
   });
 
-  const main = el('div', 'trophy-main');
+  function loadEarned() {
+    try {
+      var raw = window.localStorage.getItem(STORE_KEY);
+      if (!raw) return {};
+      var parsed = JSON.parse(raw);
+      var out = {};
+      if (parsed && typeof parsed === 'object') {
+        Object.keys(parsed).forEach(function (k) { if (parsed[k]) out[k] = true; });
+      }
+      return out;
+    } catch (e) { return {}; }
+  }
 
-  const title = el('button', 'trophy-title', trophyIsHidden(t) ? 'Hidden trophy' : t.name);
-  title.type = 'button';
-  title.addEventListener('click', () => showDetail(t));
+  function saveEarned() {
+    try { window.localStorage.setItem(STORE_KEY, JSON.stringify(earned)); } catch (e) {}
+  }
 
-  const desc = el('p', 'trophy-desc', trophyIsHidden(t)
-    ? 'Hidden until earned — tick it off to reveal its name and description.'
-    : t.description);
+  function loadSpoilers() {
+    try {
+      var raw = window.localStorage.getItem(SPOILER_KEY);
+      return raw === null ? true : raw === '1';
+    } catch (e) { return true; }
+  }
 
-  const chips = el('p', 'chip-row');
-  chips.append(gradeChip(t.grade));
-  chips.append(el('span', 'chip', t.category));
-  if (t.missable) chips.append(el('span', 'chip chip-missable', 'Possibly missable'));
-  if (earned.has(t.name)) chips.append(el('span', 'chip chip-earned', 'Earned ✓'));
+  function saveSpoilers() {
+    try { window.localStorage.setItem(SPOILER_KEY, spoilersHidden ? '1' : '0'); } catch (e) {}
+  }
 
-  const expanded = openGuides.has(t.name);
-  const guideBtn = el('button', 'guide-toggle', expanded ? 'Hide guide ▲' : 'Guide & sources ▼');
-  guideBtn.type = 'button';
-  guideBtn.setAttribute('aria-expanded', String(expanded));
-  guideBtn.addEventListener('click', () => {
-    if (openGuides.has(t.name)) openGuides.delete(t.name);
-    else openGuides.add(t.name);
-    paintList();
+  function isHidden(t) { return t.hidden && spoilersHidden && !earned[t.id]; }
+  function earnedCount() { return trophies.filter(function (t) { return earned[t.id]; }).length; }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function gradeClass(g) { return 'grade grade-' + g.toLowerCase(); }
+
+  function trophyTags(t) {
+    var html = '<span class="' + gradeClass(t.grade) + '">' + esc(t.grade) + '</span>';
+    html += '<span class="tag">' + esc(t.category) + '</span>';
+    if (t.missable) html += '<span class="tag tag-missable">Missable</span>';
+    if (t.hidden) html += '<span class="tag tag-hidden">Hidden</span>';
+    if (t.target) html += '<span class="tag">' + esc(t.target) + '</span>';
+    return html;
+  }
+
+  function matchesFilters(t) {
+    var q = els.searchBox.value.trim().toLowerCase();
+    if (q) {
+      var hay = (t.name + ' ' + t.description + ' ' + t.category).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    if (els.gradeFilter.value && t.grade !== els.gradeFilter.value) return false;
+    if (els.categoryFilter.value && t.category !== els.categoryFilter.value) return false;
+    if (els.statusFilter.value === 'earned' && !earned[t.id]) return false;
+    if (els.statusFilter.value === 'unearned' && earned[t.id]) return false;
+    if (els.missableOnly.checked && !t.missable) return false;
+    return true;
+  }
+
+  function renderList() {
+    var shown = trophies.filter(matchesFilters);
+    els.listTitle.textContent = 'Checklist — ' + trophies.length + ' trophies';
+    els.listCount.textContent = shown.length + ' shown, ' + earnedCount() + ' earned';
+    if (shown.length === 0) {
+      els.trophyList.innerHTML = '<li class="empty-note">No trophies match these filters. Clear the search or a filter to see the full list.</li>';
+      return;
+    }
+    els.trophyList.innerHTML = shown.map(function (t) {
+      var hidden = isHidden(t);
+      var name = hidden ? 'Hidden trophy' : t.name;
+      var desc = hidden ? 'Hidden on PSN — earn it to reveal the name and description.' : t.description;
+      return '<li><button type="button" class="trophy-row' + (earned[t.id] ? ' earned' : '') + '" data-id="' + t.id + '">' +
+        '<input type="checkbox" data-check="' + t.id + '"' + (earned[t.id] ? ' checked' : '') + ' aria-label="Mark ' + esc(name) + ' earned">' +
+        '<span><span class="trophy-name">' + esc(name) + '</span>' +
+        '<span class="trophy-desc">' + esc(desc) + '</span>' +
+        '<span class="trophy-meta">' + trophyTags(t) + '</span></span>' +
+        '<span aria-hidden="true">&#8250;</span>' +
+        '</button></li>';
+    }).join('');
+  }
+
+  function renderRoadmap() {
+    els.roadmapList.innerHTML = STAGES.map(function (st) {
+      var members = trophies.filter(function (t) { return t.stage === st.n; });
+      var chips = members.map(function (t) {
+        var label = isHidden(t) ? 'Hidden trophy' : t.name;
+        return '<li data-id="' + t.id + '" class="' + (earned[t.id] ? 'done' : '') + '">' + esc(label) + '</li>';
+      }).join('');
+      return '<li class="stage-card"><h3>' + esc(st.title) + ' <span>' + members.length + ' trophies</span></h3>' +
+        '<p>' + esc(st.note) + '</p><ul class="stage-trophies">' + chips + '</ul></li>';
+    }).join('');
+  }
+
+  function renderProgress() {
+    var n = earnedCount();
+    var total = trophies.length || 55;
+    var pct = Math.round((n / total) * 100);
+    els.progressText.textContent = n + ' of ' + total + ' earned';
+    els.progressPct.textContent = pct + '%';
+    els.progressFill.style.width = pct + '%';
+    els.saveNote.textContent = n === 0
+      ? 'No trophies earned yet.'
+      : n + ' earned, ' + (total - n) + ' to go. Last saved in this browser.';
+  }
+
+  function renderAll() {
+    renderList();
+    renderRoadmap();
+    renderProgress();
+  }
+
+  function openDrawer(id) {
+    var t = trophies.find(function (x) { return x.id === id; });
+    if (!t) return;
+    var hidden = isHidden(t);
+    var html = '<h2>' + esc(hidden ? 'Hidden trophy' : t.name) + '</h2>' +
+      '<div class="trophy-meta">' + trophyTags(t) + '</div>';
+    if (t.missable) {
+      html += '<div class="warn"><strong>Possibly missable.</strong> Meditate at all 18 spots. First spot: Lucia on the balcony at Jason\u2019s house after Down to Earth in Chapter 1 — before Chapter 1 ends. The 100% checklist needs only 15 of 18; this trophy needs all 18.</div>';
+    }
+    if (hidden) {
+      html += '<p>This trophy is hidden on PSN until it is earned. Its name and description stay hidden here too, while spoilers are off. Earn it in the game, tick it here, and the full guide appears.</p>';
+    } else {
+      html += '<p class="trophy-desc">' + esc(t.description) + '</p>' +
+        '<h3>Guide</h3><p>' + esc(t.guide) + '</p>' +
+        '<h3>Sources</h3><p class="sources">' + t.sources.map(function (s) {
+          var url = SOURCE_LINKS[s];
+          return url ? '<a href="' + url + '" target="_blank" rel="noopener">' + esc(s) + '</a>' : esc(s);
+        }).join(' &middot; ') + '</p>' +
+        '<h3>Roadmap</h3><p>' + esc(STAGES[t.stage - 1].title) + '</p>';
+    }
+    html += '<button type="button" class="earn-btn" data-earn="' + t.id + '">' +
+      (earned[t.id] ? 'Mark as not earned' : 'Mark as earned') + '</button>';
+    els.drawerBody.innerHTML = html;
+    els.drawer.hidden = false;
+    document.querySelector('.layout').classList.add('with-drawer');
+  }
+
+  function closeDrawer() {
+    els.drawer.hidden = true;
+    document.querySelector('.layout').classList.remove('with-drawer');
+  }
+
+  function toggleEarned(id) {
+    if (earned[id]) delete earned[id]; else earned[id] = true;
+    saveEarned();
+    renderAll();
+  }
+
+  function setView(which) {
+    var showRoadmap = which === 'roadmap';
+    els.roadmapView.hidden = !showRoadmap;
+    els.checklistView.hidden = showRoadmap;
+    els.viewRoadmap.classList.toggle('active', showRoadmap);
+    els.viewChecklist.classList.toggle('active', !showRoadmap);
+  }
+
+  function exportSave() {
+    var payload = { game: 'Grand Theft Auto VI', earned: Object.keys(earned).map(Number).sort(function (a, b) { return a - b; }) };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'gta6-trophy-progress.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 100);
+  }
+
+  function importSave(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(String(reader.result));
+        var ids = parsed && Array.isArray(parsed.earned) ? parsed.earned : [];
+        var next = {};
+        ids.forEach(function (id) {
+          var n = Number(id);
+          if (trophies.some(function (t) { return t.id === n; })) next[n] = true;
+        });
+        earned = next;
+        saveEarned();
+        renderAll();
+        els.saveNote.textContent = 'Imported ' + Object.keys(next).length + ' earned trophies.';
+      } catch (e) {
+        els.saveNote.textContent = 'That file could not be imported — it is not a save from this guide.';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // Wire up the controls.
+  ['searchBox', 'gradeFilter', 'categoryFilter', 'statusFilter'].forEach(function (id) {
+    els[id].addEventListener('input', renderList);
+    els[id].addEventListener('change', renderList);
+  });
+  els.missableOnly.addEventListener('change', renderList);
+  els.spoilerToggle.addEventListener('change', function () {
+    spoilersHidden = els.spoilerToggle.checked;
+    saveSpoilers();
+    renderAll();
+  });
+  els.viewChecklist.addEventListener('click', function () { setView('checklist'); });
+  els.viewRoadmap.addEventListener('click', function () { setView('roadmap'); });
+  els.drawerClose.addEventListener('click', closeDrawer);
+  els.exportBtn.addEventListener('click', exportSave);
+  els.importBtn.addEventListener('click', function () { els.importFile.click(); });
+  els.importFile.addEventListener('change', function () {
+    if (els.importFile.files.length) importSave(els.importFile.files[0]);
+    els.importFile.value = '';
+  });
+  els.resetBtn.addEventListener('click', function () {
+    if (window.confirm('Clear all earned trophies? This cannot be undone.')) {
+      earned = {};
+      saveEarned();
+      renderAll();
+    }
   });
 
-  const guideBox = el('div', 'guide-box');
-  if (expanded) {
-    guideBox.append(el('p', 'guide-how', t.guide));
-    guideBox.append(el('p', 'guide-sources', `Sources: ${sourceLine(t.sources)}`));
-  }
+  els.trophyList.addEventListener('click', function (ev) {
+    var check = ev.target.closest('[data-check]');
+    if (check) {
+      ev.preventDefault();
+      toggleEarned(Number(check.getAttribute('data-check')));
+      return;
+    }
+    var row = ev.target.closest('.trophy-row');
+    if (row) openDrawer(Number(row.getAttribute('data-id')));
+  });
+  els.roadmapList.addEventListener('click', function (ev) {
+    var chip = ev.target.closest('[data-id]');
+    if (chip) { setView('checklist'); openDrawer(Number(chip.getAttribute('data-id'))); }
+  });
+  els.drawerBody.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-earn]');
+    if (btn) {
+      toggleEarned(Number(btn.getAttribute('data-earn')));
+      openDrawer(Number(btn.getAttribute('data-earn')));
+    }
+  });
 
-  main.append(title, desc, chips, guideBtn, guideBox);
-  card.append(tick, main);
-  return card;
-}
-
-function trophyMatches(t) {
-  const q = searchEl.value.trim().toLowerCase();
-  if (q) {
-    const hay = `${t.name} ${t.description} ${t.guide} ${t.category}`.toLowerCase();
-    if (!hay.includes(q)) return false;
-  }
-  if (gradeEl.value !== 'all' && t.grade !== gradeEl.value) return false;
-  if (kindEl.value !== 'all' && t.category !== kindEl.value) return false;
-  if (stateEl.value === 'earned' && !earned.has(t.name)) return false;
-  if (stateEl.value === 'missing' && earned.has(t.name)) return false;
-  if (missableEl.checked && !t.missable) return false;
-  return true;
-}
-
-function paintList() {
-  const shown = trophies.filter(trophyMatches);
-  listEl.replaceChildren(...shown.map(buildCard));
-  countEl.textContent = `Showing ${shown.length} of ${trophies.length} trophies.`;
-}
-
-function paintProgress() {
-  const done = trophies.filter((t) => earned.has(t.name)).length;
-  const pct = trophies.length ? Math.round((done / trophies.length) * 100) : 0;
-  document.getElementById('earnedCount').textContent = done;
-  document.getElementById('progressFill').style.width = `${pct}%`;
-  document.getElementById('progressSub').textContent = `${pct}% to the platinum`;
-  const byGrade = (g) => trophies.filter((t) => t.grade === g && earned.has(t.name)).length;
-  const totals = (g) => trophies.filter((t) => t.grade === g).length;
-  document.getElementById('progressGrades').textContent =
-    `Platinum ${byGrade('platinum')}/${totals('platinum')} · Gold ${byGrade('gold')}/${totals('gold')} · Silver ${byGrade('silver')}/${totals('silver')} · Bronze ${byGrade('bronze')}/${totals('bronze')}`;
-}
-
-function showDetail(t) {
-  openDetail = t.name;
-  panelEl.hidden = false;
-  panelBody.replaceChildren();
-  panelBody.append(
-    el('h3', '', trophyIsHidden(t) ? 'Hidden trophy' : t.name),
-    el('p', 'official-quote', trophyIsHidden(t)
-      ? 'Hidden until earned — tick it off to reveal its name and description.'
-      : `Official: “${t.description}”`),
-  );
-  const chips = el('p', 'chip-row');
-  chips.append(gradeChip(t.grade));
-  chips.append(el('span', 'chip', t.category));
-  if (t.missable) chips.append(el('span', 'chip chip-missable', 'Possibly missable'));
-  panelBody.append(
-    chips,
-    el('h4', '', 'How to get it'),
-    el('p', '', t.guide),
-    el('h4', '', 'Sources'),
-    el('p', 'guide-sources', sourceLine(t.sources)),
-  );
-}
-
-function paintRoadmap() {
-  const stageList = document.getElementById('stageList');
-  stageList.replaceChildren(...ROADMAP.map((stage) => {
-    const item = el('li', 'stage');
-    item.append(
-      el('h3', '', stage.title),
-      el('p', '', stage.body),
-      el('p', 'stage-trophies', `Trophies: ${stage.names.join(' · ')}`),
-    );
-    return item;
-  }));
-}
-
-function switchView(name) {
-  for (const view of ['guide', 'roadmap', 'missable']) {
-    document.getElementById(`${view}View`).hidden = view !== name;
-    document.getElementById(`tab${view[0].toUpperCase()}${view.slice(1)}`).classList.toggle('is-active', view === name);
-  }
-}
-
-document.getElementById('detailClose').addEventListener('click', () => {
-  panelEl.hidden = true;
-  openDetail = null;
-});
-for (const view of ['guide', 'roadmap', 'missable']) {
-  document.getElementById(`tab${view[0].toUpperCase()}${view.slice(1)}`).addEventListener('click', () => switchView(view));
-}
-for (const control of [searchEl, gradeEl, kindEl, stateEl, missableEl, spoilerEl]) {
-  control.addEventListener('input', paintList);
-}
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify([...earned])], { type: 'application/json' }));
-  a.download = 'trophy-progress.json';
-  a.click();
-});
-document.getElementById('importFile').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  earned = new Set(JSON.parse(await file.text()));
-  storeProgress();
-  paintList();
-  paintProgress();
-});
-document.getElementById('resetBtn').addEventListener('click', () => {
-  earned = new Set();
-  storeProgress();
-  paintList();
-  paintProgress();
-});
-
-const doc = await (await fetch(DATA_URL)).json();
-trophies = doc.trophies;
-paintRoadmap();
-paintList();
-paintProgress();
+  // Load the data and paint the page.
+  els.spoilerToggle.checked = spoilersHidden;
+  fetch(DATA_URL)
+    .then(function (res) {
+      if (!res.ok) throw new Error('trophies.json could not be loaded');
+      return res.json();
+    })
+    .then(function (data) {
+      trophies = (data.trophies || []).slice().sort(function (a, b) { return a.id - b.id; });
+      renderAll();
+    })
+    .catch(function () {
+      els.trophyList.innerHTML = '<li class="empty-note">The trophy data could not be loaded. Serve the app/ folder with a static server and reload.</li>';
+    });
+})();
