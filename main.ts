@@ -1,54 +1,89 @@
-// GTA 6 trophy guide, version 3 — the hand-in program.
+// GTA VI Trophy Case File — entry program.
 //
-// Node 22, standard library only. It takes the finished guide in this
-// repository — the static app under app/ and the screenshots under
-// screenshots/ — and hands it to the grader: both folders are copied into
-// the output directory, and dossier.json is written there with the vendored
-// make.fun library, which is what the judge reads.
+// Copies app/ and screenshots/ from this repository into the output
+// directory and writes /output/dossier.json with buildDossier from
+// vendor/makefun-frontend.ts. Node 22, standard library only.
 //
-// Run it outside the grader like this:
-//   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
-//
-// Without MAKEFUN_OUTPUT_DIR it writes to /output, as the grader expects.
-// vendor/makefun-frontend.ts must stay exactly as the kit shipped it: the
-// scorer rebuilds dossier.json with its own copy and compares byte for byte.
-//
-// Why version 3 exists: version 2 deleted the output directory itself with
-// rmSync(dir, { recursive: true, force: true }) before recreating it. In the
-// grader /output is a bind mount, and removing a mount point fails with
-// EBUSY ("Device or resource busy"), so the hand-in was rejected. This
-// version never touches the output directory itself: it only removes what is
-// inside it, one child at a time, and then makes sure the directory exists.
+// The output directory is treated with care: in the grader it is a bind
+// mount, so removing the directory itself fails with EBUSY and the run
+// fails. This program never removes it — it creates the directory when it
+// is missing and clears only the entries inside it, one by one.
 
-import { cpSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-frontend.ts';
 
-const repoRoot = fileURLToPath(new URL('.', import.meta.url));
-const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+// The caps the gate holds the entry to: the dossier text cap, at most four
+// screenshots of at most 256 KiB each, and the app's file, byte and path
+// limits from the bounty rules.
+const DOSSIER_CAPS = {
+  text_max_bytes: 163840,
+  screenshots: { max: 4, max_bytes: 256 * 1024 },
+  app_max_files: 993,
+  app_max_bytes: 48 * 1024 * 1024,
+  app_path_max_bytes: 1000,
+};
 
-// Empty the output directory without ever removing the directory itself, so
-// the call is safe when the directory is a mount point: create it if it is
-// missing, then delete each entry inside it and leave the directory in place.
-function emptyOutputDir(dir: string): void {
-  mkdirSync(dir, { recursive: true });
-  for (const child of readdirSync(dir)) {
-    rmSync(join(dir, child), { recursive: true, force: true });
+const REPO_ROOT = dirname(fileURLToPath(import.meta.url));
+
+function outputDir(): string {
+  const fromEnv = process.env.MAKEFUN_OUTPUT_DIR;
+  return fromEnv && fromEnv.length > 0 ? fromEnv : '/output';
+}
+
+function ensureDir(path: string): void {
+  mkdirSync(path, { recursive: true });
+}
+
+// Empty a directory without touching the directory itself: list its
+// entries and remove each one. Safe on a bind mount, where removing the
+// mount point itself would throw EBUSY.
+function clearChildren(path: string): void {
+  for (const entry of readdirSync(path)) {
+    rmSync(join(path, entry), { recursive: true, force: true });
   }
 }
 
-function handInGuide(): void {
-  emptyOutputDir(outDir);
-  cpSync(join(repoRoot, 'app'), join(outDir, 'app'), { recursive: true });
-  cpSync(join(repoRoot, 'screenshots'), join(outDir, 'screenshots'), { recursive: true });
-  const dossier = buildDossier(outDir, {
-    text_max_bytes: 163840,
-    screenshots: { max: 4, max_bytes: 262144 },
-    app_max_files: 993,
-    app_max_bytes: 50331648,
-  });
-  writeFileSync(join(outDir, 'dossier.json'), dossier);
+function copyTree(source: string, target: string): void {
+  ensureDir(target);
+  for (const entry of readdirSync(source, { withFileTypes: true })) {
+    const from = join(source, entry.name);
+    const to = join(target, entry.name);
+    if (entry.isDirectory()) {
+      copyTree(from, to);
+    } else if (entry.isFile()) {
+      copyFileSync(from, to);
+    }
+  }
 }
 
-handInGuide();
+function main(): void {
+  const out = outputDir();
+  ensureDir(out);
+  clearChildren(out);
+
+  const appSource = join(REPO_ROOT, 'app');
+  const shotsSource = join(REPO_ROOT, 'screenshots');
+  if (!existsSync(appSource) || !statSync(appSource).isDirectory()) {
+    throw new Error('main: app/ is missing from the repository');
+  }
+  copyTree(appSource, join(out, 'app'));
+  if (existsSync(shotsSource) && statSync(shotsSource).isDirectory()) {
+    copyTree(shotsSource, join(out, 'screenshots'));
+  }
+
+  const dossier = buildDossier(out, DOSSIER_CAPS);
+  writeFileSync(join(out, 'dossier.json'), dossier);
+  console.log(`main: wrote dossier.json (${dossier.length} bytes) to ${out}`);
+}
+
+main();
