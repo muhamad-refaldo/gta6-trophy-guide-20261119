@@ -1,7 +1,239 @@
-body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
-header { display: flex; justify-content: space-between; align-items: baseline; }
-.controls { display: flex; gap: 16px; margin: 12px 0; align-items: center; }
-.import input { font-size: 12px; }
-table { border-collapse: collapse; width: 100%; }
-th, td { border-bottom: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; white-space: pre-line; }
-th { background: #f2f2f2; }
+/* GTA VI trophy guide — dark Vice City neon look, system fonts only, no external files. */
+:root {
+  --bg: #120a24;
+  --bg2: #1b1038;
+  --card: #221647;
+  --card2: #2c1c5c;
+  --line: #3d2a72;
+  --text: #f2ecff;
+  --muted: #b9aede;
+  --pink: #ff2e88;
+  --cyan: #00e5ff;
+  --gold: #ffc93c;
+  --silver: #c9d2e0;
+  --bronze: #e0955a;
+  --green: #3ddc97;
+  --red: #ff5a5a;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.hero {
+  display: flex;
+  gap: 28px;
+  justify-content: space-between;
+  padding: 28px 28px 20px;
+  background: linear-gradient(120deg, #2a0f4d 0%, #120a24 55%, #0a2a3d 100%);
+  border-bottom: 3px solid var(--pink);
+}
+.hero-text { max-width: 720px; }
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--cyan);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+h1 { margin: 0 0 8px; font-size: 34px; line-height: 1.1; }
+.lede { margin: 0; color: var(--muted); font-size: 15px; }
+.progress-card {
+  min-width: 260px;
+  padding: 16px 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.progress-big { margin: 0; font-size: 22px; font-weight: 800; }
+.progress-big span { color: var(--gold); }
+.bar {
+  height: 12px;
+  margin: 10px 0 6px;
+  background: #0d0720;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--pink), var(--gold));
+  border-radius: 6px;
+}
+.progress-pct { margin: 0; color: var(--muted); font-size: 13px; }
+.grade-counts { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+.tabs { display: flex; gap: 8px; padding: 14px 28px 0; }
+.tab {
+  padding: 9px 18px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tab.active { background: var(--pink); border-color: var(--pink); }
+.tab-panel { padding: 18px 28px 28px; }
+.hidden { display: none; }
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.toolbar input[type="search"] {
+  flex: 1 1 220px;
+  padding: 9px 12px;
+  background: #0d0720;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 15px;
+}
+.toolbar select {
+  padding: 8px;
+  background: #0d0720;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+}
+.toolbar label { color: var(--muted); font-size: 13px; }
+.toolbar .check { display: flex; gap: 6px; align-items: center; color: var(--text); font-size: 14px; }
+.toolbar button, .toolbar .import {
+  padding: 9px 14px;
+  background: var(--card2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.toolbar button:hover, .toolbar .import:hover { border-color: var(--cyan); }
+.toolbar .import input { display: none; }
+.hint { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+.trophy-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.trophy {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--bronze);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.trophy:hover { border-color: var(--cyan); }
+.trophy.selected { border-color: var(--pink); background: var(--card2); }
+.trophy.grade-platinum { border-left-color: #eaf6ff; }
+.trophy.grade-gold { border-left-color: var(--gold); }
+.trophy.grade-silver { border-left-color: var(--silver); }
+.trophy.grade-bronze { border-left-color: var(--bronze); }
+.trophy.earned { opacity: 0.75; }
+.trophy input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--pink); cursor: pointer; }
+.trophy-name { margin: 0; font-size: 16px; font-weight: 800; }
+.trophy-name .earned-mark { color: var(--green); }
+.trophy-desc { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.trophy-meta { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.badge {
+  padding: 1px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.badge.platinum { background: #eaf6ff; color: #123; }
+.badge.gold { background: var(--gold); color: #231a00; }
+.badge.silver { background: var(--silver); color: #1c2330; }
+.badge.bronze { background: var(--bronze); color: #2a1500; }
+.badge.cat { background: #0d0720; color: var(--cyan); border: 1px solid var(--line); }
+.badge.miss { background: var(--red); color: #fff; }
+.badge.hidden { background: #0d0720; color: var(--muted); border: 1px dashed var(--line); }
+.detail {
+  position: sticky;
+  top: 12px;
+  padding: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.detail-close {
+  float: right;
+  padding: 4px 10px;
+  background: #0d0720;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.detail-close:hover { color: var(--text); border-color: var(--cyan); }
+.detail h2 { margin: 0 0 4px; font-size: 20px; }
+.detail .official { color: var(--muted); font-size: 14px; font-style: italic; }
+.detail h3 { margin: 16px 0 4px; color: var(--cyan); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+.detail p { margin: 0 0 8px; }
+.detail .guide-text { font-size: 15px; }
+.detail .sources { list-style: none; margin: 0; padding: 0; }
+.detail .sources li { margin-bottom: 6px; font-size: 13px; color: var(--muted); word-break: break-all; }
+.detail .sources b { color: var(--text); }
+.detail-empty { color: var(--muted); }
+.detail .missable-warning {
+  padding: 10px 12px;
+  background: #3d0f1e;
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  color: #ffd7d7;
+}
+h2 { font-size: 24px; margin: 4px 0 10px; }
+.section-lede { color: var(--muted); max-width: 760px; }
+.stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.stages li {
+  padding: 16px 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--pink);
+  border-radius: 10px;
+}
+.stages h3 { margin: 0 0 6px; font-size: 18px; }
+.stages p { margin: 0 0 6px; }
+.stage-trophies { color: var(--gold); font-size: 13px; }
+.checklist-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.checklist-table th, .checklist-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.checklist-table th { color: var(--cyan); }
+.source-note { color: var(--muted); font-size: 13px; }
+.missable-card {
+  max-width: 760px;
+  padding: 18px;
+  background: #3d0f1e;
+  border: 1px solid var(--red);
+  border-radius: 12px;
+}
+.missable-card h3 { margin: 8px 0; }
+.grade-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.grade-badge.bronze { background: var(--bronze); color: #2a1500; }
+footer { padding: 0 28px 28px; color: var(--muted); font-size: 13px; max-width: 900px; }
+@media (max-width: 900px) {
+  .hero { flex-direction: column; }
+  .layout { grid-template-columns: 1fr; }
+  .detail { position: static; }
+}
