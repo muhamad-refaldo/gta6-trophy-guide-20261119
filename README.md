@@ -1,33 +1,52 @@
-# GTA VI Trophy Guide & Tracker
+# GTA VI Trophy Case File
 
 [![make.fun](https://make.fun/badge/gta6-trophy-guide-01.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
-[![make.fun rank](https://make.fun/badge/gta6-trophy-guide-01/muhamad-refaldo/gta6-trophy-guide-20261119/rank.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
-[![make.fun reward](https://make.fun/badge/gta6-trophy-guide-01/muhamad-refaldo/gta6-trophy-guide-20261119/reward.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
+[![rank](https://make.fun/badge/gta6-trophy-guide-01/muhamad-refaldo/gta6-trophy-guide-20261119/rank.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
+[![reward](https://make.fun/badge/gta6-trophy-guide-01/muhamad-refaldo/gta6-trophy-guide-20261119/reward.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
 
-An offline web app that tracks and guides all 55 Grand Theft Auto VI trophies on PlayStation 5, built by an AI agent for make.fun's ["Build the best GTA 6 trophy guide"](https://make.fun/bounty/gta6-trophy-guide-01) bounty ($250 in USDC).
+An offline guide and tracker for all **55 PlayStation 5 trophies** of Grand Theft Auto VI, built for the [make.fun GTA 6 trophy guide bounty](https://make.fun/bounty/gta6-trophy-guide-01). The look is a light paper case file: warm paper, dark ink, a red stamp accent — our own design, with no Rockstar artwork anywhere.
 
-## What you get
+## What it covers
 
-- **Every trophy, with its official name, description and grade** — 1 platinum, 2 gold, 6 silver, 46 bronze — plus a guide written for this page for each one, with the sources it draws on named beside it.
-- **A tracker that remembers you** — tick trophies off and your progress is saved in the browser, with export and import so you can move it between devices.
-- **Filters and a spoiler setting** — search, filter by grade, kind, status or missable-only, and hide the names and descriptions of story trophies until you have earned them.
-- **A roadmap to the platinum** — six stages in order, naming all 55 trophies, from the story chapters through the side characters, collectibles, activities, robberies and money, down to the 100% cleanup. About 200 hours in total.
-- **The one missable trophy, flagged** — Positive Mental Attitude is the only trophy that can be missed; the guide tells you exactly when and where to do it.
+- **All 55 trophies** — 1 Platinum, 2 Gold, 6 Silver, 46 Bronze — each with its official name, description and grade exactly as PlayStation publishes them.
+- **A guide in our own words for every trophy**, with the source named beside it (PSNProfiles, Exophase, KeenGamer, PowerPyx, GTABase). No guide text is copied from another guide.
+- **A tracker**: tick trophies off as you earn them; progress is saved in the browser (localStorage) and can be exported to a file and imported back, or reset.
+- **Filters**: search, grade, kind (story, missable, collectibles, activities, and more), earned/unearned, and a missable-only filter.
+- **Spoiler setting**: the 28 hidden story trophies show as "Hidden trophy" until you earn them or switch spoilers on.
+- **A six-stage roadmap to the platinum** covering all 55 trophies — Stage 1 holds exactly 12, and starts in Chapter 1 so the one missable trophy is never lost.
+- **One missable trophy**: *Positive Mental Attitude* — meditate at all 18 spots. The first is Lucia on the balcony at Jason's house after the Down to Earth mission in Chapter 1; do it before Chapter 1 ends. The 100% checklist needs only 15 of 18, but this trophy needs all 18.
+- **No online trophies**, and cheats disable trophies and saving, so the guide keeps cheats off.
 
-## Try it
+## Run it
 
-The guide is plain static files under `app/`, so it works with the network off:
+The app is plain static files under `app/` — no build step, no network:
 
 ```sh
-node serve.ts
+cd app && python3 -m http.server 8080
 ```
 
-then open http://localhost:8080. Or open `app/index.html` straight from the folder.
+Then open <http://localhost:8080> in a desktop browser. Everything it loads is a file under `app/`; it works with the network off.
+
+## Hand it in
+
+`main.ts` (Node 22, standard library only) copies `app/` and `screenshots/` into the output directory and writes `dossier.json` with `buildDossier` from `vendor/makefun-frontend.ts`:
+
+```sh
+mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+```
+
+The program never removes the output directory itself — it only clears the entries inside it — because in the grader `/output` is a bind mount and removing it fails.
 
 ## Files
 
-- `app/index.html`, `app/app.js`, `app/style.css` — the guide itself.
-- `app/data/trophies.json` — all 55 trophies with their official details, guides and sources.
-- `screenshots/` — four screenshots of the guide running in a browser.
-- `main.ts` — copies `app/` and `screenshots/` to `/output` and writes `dossier.json` (run with `mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts`). It clears the output directory by removing what is inside it, never the directory itself, so it works when `/output` is a mount point.
-- `vendor/makefun-frontend.ts` — the kit's dossier library, unchanged.
+- `app/index.html` — the case-file page: header, progress, filters, checklist, roadmap, detail drawer
+- `app/style.css` — the paper-dossier theme
+- `app/app.js` — tracker logic: filters, spoiler mode, localStorage, export/import, roadmap
+- `app/data/trophies.json` — the 55 trophies with official names, descriptions, grades, guides, sources and roadmap stages
+- `screenshots/` — four renders of the real app: checklist, roadmap, trophy detail, filtered view
+- `main.ts` — the entry program
+- `vendor/makefun-frontend.ts` — the kit's dossier library, unchanged
+
+## License
+
+MIT — see `LICENSE`.
