@@ -3,103 +3,115 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GTA VI Trophy Guide &amp; Tracker — all 55 PS5 trophies</title>
-<meta name="description" content="Offline guide and tracker for every one of the 55 Grand Theft Auto VI trophies on PlayStation 5: each guide in our own words with its sources, a six-stage roadmap to the platinum, and the one trophy you can miss, flagged.">
+<title>GTA VI Trophy Case File — All 55 Trophies</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="masthead">
-  <p class="eyebrow">Grand Theft Auto VI &middot; PlayStation 5 &middot; Works offline</p>
-  <h1>GTA VI Trophy Guide &amp; Tracker</h1>
-  <p class="lede">Every one of the 55 trophies, with the official name, description and grade exactly as PlayStation lists it, a guide written for this page with the sources it draws on, and a tracker that keeps your progress. One playthrough, no trophies that need the internet, roughly 200 hours to the platinum.</p>
-  <div class="progress-card" id="progressCard">
-    <p class="progress-big"><span id="earnedCount">0</span> of 55 earned</p>
-    <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
-    <p class="progress-sub" id="progressSub">0% to the platinum</p>
-    <p class="progress-grades" id="progressGrades">Platinum 0/1 &middot; Gold 0/2 &middot; Silver 0/6 &middot; Bronze 0/46</p>
-    <p class="progress-note">28 of the 55 stay hidden on PlayStation until you earn them. Cheats switch trophies and saving off, so play clean.</p>
+  <div class="masthead-inner">
+    <p class="kicker">Leonida Bureau of Trophies &middot; Case File No. 55</p>
+    <h1>Grand Theft Auto VI — Trophy Case File</h1>
+    <p class="subtitle">Every PlayStation 5 trophy, its official description and grade, a guide in our own words with its sources, a six-stage road to the platinum, and a tracker that remembers your progress.</p>
+    <div class="progress-wrap" aria-label="Platinum progress">
+      <div class="progress-label"><span id="progressText">0 of 55 earned</span><span id="progressPct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
   </div>
 </header>
 
-<nav class="view-tabs" aria-label="Guide views">
-  <button type="button" class="tab-btn is-active" data-view="guide" id="tabGuide">Checklist</button>
-  <button type="button" class="tab-btn" data-view="roadmap" id="tabRoadmap">Roadmap to Platinum</button>
-  <button type="button" class="tab-btn" data-view="missable" id="tabMissable">Missable Trophies</button>
-</nav>
+<div class="banner" id="missableBanner">
+  <strong>&#9888; One missable trophy.</strong>
+  <span><strong>Positive Mental Attitude</strong> — meditate at all 18 spots. The first is Lucia on the balcony at Jason&rsquo;s house after the Down to Earth mission in Chapter 1. Do it before Chapter 1 ends; the 100% checklist needs only 15 of 18, but this trophy needs all 18.</span>
+</div>
 
-<section id="guideView" class="view">
-  <div class="toolbar">
-    <label class="tool-field">Search <input type="search" id="searchBox" placeholder="Search trophies, guides, places&hellip;"></label>
-    <label class="tool-field">Grade
-      <select id="gradePick">
-        <option value="all">All grades</option>
-        <option value="platinum">Platinum</option>
-        <option value="gold">Gold</option>
-        <option value="silver">Silver</option>
-        <option value="bronze">Bronze</option>
+<main class="layout">
+  <aside class="sidebar" aria-label="Filters and tools">
+    <section class="panel">
+      <h2>Find a trophy</h2>
+      <input id="searchBox" type="search" placeholder="Search name or description&hellip;" autocomplete="off">
+      <label class="field-label" for="gradeFilter">Grade</label>
+      <select id="gradeFilter">
+        <option value="">All grades</option>
+        <option>Platinum</option>
+        <option>Gold</option>
+        <option>Silver</option>
+        <option>Bronze</option>
       </select>
-    </label>
-    <label class="tool-field">Kind
-      <select id="kindPick">
-        <option value="all">All kinds</option>
-        <option value="Story">Story</option>
-        <option value="Side characters">Side characters</option>
-        <option value="Activities">Activities</option>
-        <option value="Exploration">Exploration</option>
-        <option value="Collectibles">Collectibles</option>
-        <option value="Robberies">Robberies</option>
-        <option value="Partner">Partner</option>
-        <option value="Money">Money</option>
-        <option value="Platinum &amp; 100%">Platinum &amp; 100%</option>
+      <label class="field-label" for="categoryFilter">Kind</label>
+      <select id="categoryFilter">
+        <option value="">All kinds</option>
+        <option>Story</option>
+        <option>Activities</option>
+        <option>Collectibles</option>
+        <option>Robberies</option>
+        <option>Exploration</option>
+        <option>Side characters</option>
+        <option>Partner</option>
+        <option>Money</option>
+        <option>Platinum</option>
       </select>
-    </label>
-    <label class="tool-field">Status
-      <select id="statePick">
-        <option value="all">Earned + missing</option>
-        <option value="missing">Missing only</option>
+      <label class="field-label" for="statusFilter">Status</label>
+      <select id="statusFilter">
+        <option value="">Earned and unearned</option>
         <option value="earned">Earned only</option>
+        <option value="unearned">Unearned only</option>
       </select>
-    </label>
-    <label class="tool-check"><input type="checkbox" id="missablePick"> Missable only</label>
-    <label class="tool-check"><input type="checkbox" id="spoilerPick" checked> Hide story spoilers</label>
-    <button type="button" class="tool-btn" id="exportBtn">Export progress</button>
-    <label class="tool-btn tool-import">Import progress <input type="file" id="importFile" accept="application/json"></label>
-    <button type="button" class="tool-btn tool-quiet" id="resetBtn">Reset</button>
-  </div>
-  <p class="count-line" id="countLine">Showing 55 of 55 trophies.</p>
-  <div class="layout">
-    <div class="trophy-list" id="trophyList"></div>
-    <aside class="detail-panel" id="detailPanel" hidden>
-      <button type="button" class="detail-close" id="detailClose">Close &times;</button>
-      <div id="detailBody"></div>
-    </aside>
-  </div>
-</section>
+      <label class="check-row"><input type="checkbox" id="missableOnly"> Missable only</label>
+      <label class="check-row"><input type="checkbox" id="spoilerToggle" checked> Hide story spoilers</label>
+      <p class="hint">With spoilers hidden, the 28 hidden story trophies show as &ldquo;Hidden trophy&rdquo; until you earn them.</p>
+    </section>
 
-<section id="roadmapView" class="view" hidden>
-  <h2>Roadmap to the platinum</h2>
-  <p class="section-lede">Six stages, in order, covering all 55 trophies. Play the story first, then the side characters, then the collectibles and the map, then the activities, then the robberies and the money, and finish with the 100% cleanup. Around 200 hours from the first mission to the platinum.</p>
-  <ol class="stage-list" id="stageList"></ol>
-</section>
+    <section class="panel">
+      <h2>Your save</h2>
+      <p class="hint">Progress is stored in this browser only. Export a backup before you clear your data.</p>
+      <div class="button-row">
+        <button id="exportBtn" type="button">Export</button>
+        <button id="importBtn" type="button">Import</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden>
+        <button id="resetBtn" type="button" class="danger">Reset</button>
+      </div>
+      <p class="save-note" id="saveNote">No trophies earned yet.</p>
+    </section>
 
-<section id="missableView" class="view" hidden>
-  <h2>Missable trophies</h2>
-  <p class="section-lede">One trophy in the whole list can be missed. The other 54 can all be earned after the story, in free roam.</p>
-  <article class="missable-card">
-    <p class="chip-row"><span class="chip chip-bronze">Bronze</span> <span class="chip chip-missable">Possibly missable</span> <span class="chip">Exploration</span></p>
-    <h3>Positive Mental Attitude</h3>
-    <p class="official-quote">Official: &ldquo;Meditate at every spot across Leonida.&rdquo;</p>
-    <p>Meditate at all 18 meditation spots across Leonida as Jason and Lucia. The first spot is Lucia meditating on the balcony at Jason&rsquo;s house, offered after the mission Down to Earth in Chapter 1. <strong>Do it before Chapter 1 ends, or it is gone for this playthrough.</strong> The 100% checklist only asks for 15 of the 18 spots, but the trophy asks for all 18.</p>
-    <p class="sources-line">Sources: KeenGamer trophy guide — https://www.keengamer.com/articles/guides/gta-6-trophy-guide-platinum-roadmap-all-55-trophies/ &middot; Sixshore trophy list — https://sixshore.com/gta-6/guides/trophies-and-achievements/ &middot; GTA Zone trophy list — https://gta-zone.com/news/gta-6-trophies-achievements/</p>
-  </article>
-  <p class="reassurance">The other 54 trophies have no point of no return: finish the story first and pick them up afterwards without worry.</p>
-</section>
+    <section class="panel">
+      <h2>Views</h2>
+      <div class="button-row">
+        <button id="viewChecklist" type="button" class="active">Checklist</button>
+        <button id="viewRoadmap" type="button">Roadmap</button>
+      </div>
+      <p class="hint">The roadmap walks all 55 trophies through six stages, from landing in Leonida to the platinum.</p>
+    </section>
+  </aside>
 
-<footer class="page-foot">
-  <p>For the judge: each trophy&rsquo;s guide sits beside the sources it draws on, right inside its checklist row. The screenshots show the checklist with a guide open, the roadmap, and the missable flag at work.</p>
-  <p>Guides are written in our own words from the sources they cite. Trophy names and descriptions are shown as PlayStation publishes them. No Rockstar logo or official artwork is used anywhere in this guide.</p>
+  <section class="content">
+    <div id="checklistView">
+      <div class="list-head">
+        <h2 id="listTitle">Checklist — 55 trophies</h2>
+        <p id="listCount" class="hint"></p>
+      </div>
+      <ul id="trophyList" class="trophy-list"></ul>
+    </div>
+
+    <div id="roadmapView" hidden>
+      <div class="list-head">
+        <h2>Road to the platinum</h2>
+        <p class="hint">Six stages, all 55 trophies, in the order to earn them. Stage 1 starts in Chapter 1 — meditate early, or the one missable trophy slips away.</p>
+      </div>
+      <ol id="roadmapList" class="roadmap-list"></ol>
+    </div>
+  </section>
+
+  <aside class="drawer" id="drawer" aria-label="Trophy detail" hidden>
+    <button id="drawerClose" type="button" class="drawer-close" aria-label="Close detail">&times;</button>
+    <div id="drawerBody"></div>
+  </aside>
+</main>
+
+<footer class="colophon">
+  <p>Guide written in our own words for this case file. Trophy names and descriptions are as PlayStation publishes them. Sources are named beside every guide: PSNProfiles, Exophase, KeenGamer, PowerPyx and GTABase, via Planet GTA 6. No Rockstar artwork is used; the look is our own. The app works fully offline — it loads nothing from the network.</p>
+  <p>Cheats disable trophies and saving. There are no online trophies.</p>
 </footer>
 
-<script type="module" src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
